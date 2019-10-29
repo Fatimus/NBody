@@ -235,28 +235,12 @@ public class Simulation extends AnimationTimer {
     }
 
     /**
-     * DEMOS
+     * DEMOS (FOR TESTING ONLY)
      */
     private void createDemo() {
         /**
          * EXPERIMENTATION SECTION
          */
-        int sideLength = 35;
-        double centerX = 0;
-        double centerY = 300;
-        InteractableBody center = passCreatedObject(0, 0, 0, 0, 6000, InteractableBody.defaultRadius(1000) / 10, false, Color.RED);
-        for (int i = 0; i < sideLength; i++) {
-            for (int j = 0; j < sideLength; j++) {
-                double radius = 0.2 * i + Math.random() * 0.5;
-                double angle = Math.random() * 2 * Math.PI;
-                double tx = Math.cos(angle) * radius + centerX;
-                double ty = Math.sin(angle) * radius + centerY;
-                double speed = Math.sqrt(GRAVITATIONAL_CONSTANT * i * j * 0.5 / radius / radius);
-                double vx = speed * (ty - centerY) / radius + 3;
-                double vy = -speed * (tx - centerX) / radius;
-                createObject(tx, ty, vx, vy, 0.1);
-            }
-        }
 
 //        NBDWriter writer = new NBDWriter();
 //        writer.write(interactableObjects);

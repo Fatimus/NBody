@@ -1,14 +1,18 @@
+import com.sun.javafx.tk.Toolkit;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -176,7 +180,7 @@ public class SimulationUI extends Group {
         collisionsEnabled = new CheckBox("Enable Collisions");
         if (simulation.BACKGROUND_BLACK) collisionsEnabled.setTextFill(Color.gray(0.7));
         collisionsEnabled.setSelected(true);
-        collisionsEnabled.setTranslateX(450);
+        collisionsEnabled.setTranslateX(460);
         collisionsEnabled.setTranslateY(23);
         collisionsEnabled.selectedProperty().addListener(new ChangeListener<Boolean>() {
             @Override
@@ -190,15 +194,15 @@ public class SimulationUI extends Group {
     private Text clippingTypePrompt() {
         Text clippingTypePrompt = new Text("Clipping Mode:");
         if (simulation.BACKGROUND_BLACK) clippingTypePrompt.setFill(Color.gray(0.7));
-        clippingTypePrompt.setTranslateX(450);
+        clippingTypePrompt.setTranslateX(460);
         clippingTypePrompt.setTranslateY(63);
         return clippingTypePrompt;
     }
 
     private Button focusBodySetter() {
         focusBodySetter = new Button("Track Object");
-        focusBodySetter.setPrefWidth(85);
-        focusBodySetter.setTranslateX(450);
+        focusBodySetter.setPrefWidth(120);
+        focusBodySetter.setTranslateX(460);
         focusBodySetter.setTranslateY(80);
         focusBodySetter.setOnAction(e -> {
             simulation.setFocusBody(simulation.getSelectedBody());
@@ -214,7 +218,7 @@ public class SimulationUI extends Group {
                 clippingTypeSelector.setText("Full");
             } else clippingTypeSelector.setText("Soft");
         });
-        clippingTypeSelector.setTranslateX(538);
+        clippingTypeSelector.setTranslateX(565);
         clippingTypeSelector.setTranslateY(46);
         clippingTypeSelector.setPrefWidth(50);
         return clippingTypeSelector;
@@ -222,7 +226,7 @@ public class SimulationUI extends Group {
 
     private Button fileOpener() {
         fileOpenerButton = new Button("Open File");
-        fileOpenerButton.setTranslateX(620);
+        fileOpenerButton.setTranslateX(640);
         fileOpenerButton.setTranslateY(20);
         fileOpenerButton.setPrefWidth(100);
         fileOpenerButton.setOnAction(e -> {
@@ -261,8 +265,8 @@ public class SimulationUI extends Group {
     }
     private Button stepFrame() {
         stepFrameButton = new Button("Step Frame");
-        stepFrameButton.setTranslateX(620);
-        stepFrameButton.setTranslateY(50);
+        stepFrameButton.setTranslateX(640);
+        stepFrameButton.setTranslateY(55);
         stepFrameButton.setPrefWidth(100);
         stepFrameButton.setOnAction(e -> simulation.handle(0));
         return stepFrameButton;
