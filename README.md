@@ -18,7 +18,7 @@ I would also recommend downloading the `samples/` folder, which contains many sa
 
 ## How to use the program
 
-To begin, double-click the executable `jar` you downloaded. At startup, you will see an otherwise blank window with a UI bar at the top. The buttons, text boxes, and check boxes in the UI bar control the simulation, while space underneath displays the objects.
+To begin, double-click the executable `jar` you downloaded. At startup, you will see an otherwise blank window with a UI bar at the top. The buttons, text boxes, and check boxes in the UI bar control the simulation, while the space underneath displays the objects.
 #### UI Elements
 All text fields in this project are instances of the `SettableNumberField` class. That is, they follow a certain behavior:
 1. When clicked on, all text in the field will be selected by default.
