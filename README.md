@@ -1,7 +1,7 @@
 
 # NBody
 
-N-Body is a project to make a simple-to-use, two-dimensional Newtonian N-Body simulation with features like zoom, pan, track, select, remove, edit, and save. Typical free-to-use N-Body simulations available online usually lack several or all of these features, an issue this project aims to remedy. The editor is still work-in-progress, but the simulator is fully functional. The simulation runs on Java 1.8 with JavaFX as the primary graphics library. 
+N-Body is a project to make a simple-to-use, two-dimensional Newtonian N-Body simulation with features like zoom, pan, track, select, remove, edit, and save. Users often experience frustration with online, free-to-use N-body simulations because many of these features are incomplete or lacking altogether. The goal of this project is to improve the user experience by providing features that are not just interactive but also enjoyable. The editor is still work-in-progress, but the simulator is fully functional. The simulation runs on Java 1.8 with JavaFX as the primary graphics library. 
 
 ## Getting Started
 
