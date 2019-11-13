@@ -241,7 +241,21 @@ public class Simulation extends AnimationTimer {
         /**
          * EXPERIMENTATION SECTION
          */
-
+        double centerX = 900;
+        double centerY = 400;
+        InteractableBody center = createObject(centerX, centerY, 0, 0, 1000);
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 15; j++) {
+                double angle = Math.random() * 2 * Math.PI;
+                double radius = 100 + 3 * i + Math.random() * 10;
+                double tx = centerX + radius * Math.cos(angle);
+                double ty = centerY + radius * Math.sin(angle);
+                double speed = Math.sqrt(GRAVITATIONAL_CONSTANT * center.getMass() / radius);
+                double vx = center.getVX() - speed * Math.sin(angle);
+                double vy = center.getVY() + speed * Math.cos(angle);
+                createObject(tx, ty, vx, vy, 0);
+            }
+        }
 //        NBDWriter writer = new NBDWriter();
 //        writer.write(interactableObjects);
     }
@@ -324,7 +338,6 @@ public class Simulation extends AnimationTimer {
         if (hasFocusBody) setFocusBody(b);
     }
 
-    private ArrayList<CollisionGroup> collisionGroups = new ArrayList<>();
     private ArrayList<MutableDouble> bounds = new ArrayList<>();
 
     public void handle(long now) {
@@ -335,12 +348,15 @@ public class Simulation extends AnimationTimer {
              * Sweep and Prune
              */
             Collections.sort(bounds);
+            ArrayList<CollisionGroup> collisionGroups = new ArrayList<>();
             ArrayList<InteractableBody> activeObjects = new ArrayList<>();
             for (MutableDouble bound : bounds) {
                 if (bound instanceof LeftBound) {
                     for (InteractableBody b : activeObjects)
-                        b.getPotentialIntersections().add(((LeftBound) bound).getOwner());
-                    ((LeftBound) bound).getOwner().getPotentialIntersections().addAll(activeObjects);
+                        if (b.getMass() != 0)
+                            b.getPotentialIntersections().add(((LeftBound) bound).getOwner());
+                    if (((LeftBound) bound).getOwner().getMass() != 0)
+                        ((LeftBound) bound).getOwner().getPotentialIntersections().addAll(activeObjects);
                     activeObjects.add(((LeftBound) bound).getOwner());
                 } else {
                     activeObjects.remove(((RightBound) bound).getOwner());
@@ -353,6 +369,7 @@ public class Simulation extends AnimationTimer {
                 collide(group.getCollisionObjects());
             }
             activeObjects.clear();
+
             /**
              * Brute force
              */
@@ -367,7 +384,6 @@ public class Simulation extends AnimationTimer {
 //            for (CollisionGroup group : collisionGroups) {
 //                collide(group.getCollisionObjects());
 //            }
-            collisionGroups.clear();
         }
         interactableObjects.parallelStream()
                 .forEach(b -> {

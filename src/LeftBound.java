@@ -1,13 +1,6 @@
-public class LeftBound extends MutableDouble {
-
-    private InteractableBody owner;
+public class LeftBound extends Bound {
 
     public LeftBound(double value, InteractableBody owner) {
-        super(value);
-        this.owner = owner;
-    }
-
-    public InteractableBody getOwner() {
-        return owner;
+        super(value, owner);
     }
 }

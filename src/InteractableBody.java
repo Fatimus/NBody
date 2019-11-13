@@ -81,7 +81,7 @@ public class InteractableBody extends Circle {
                 .forEach(b -> {
                     if (
                             !b.equals(this) &&
-                            (mass == 0 ? b.getMass() != 0 : true) &&
+                            !(mass == 0 && b.getMass() == 0) &&
                             !b.markedForCollision &&
                             Math.sqrt(
                                     (simulationX - b.getSimulationX()) * (simulationX - b.getSimulationX()) +

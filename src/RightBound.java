@@ -1,13 +1,6 @@
-public class RightBound extends MutableDouble {
-
-    private InteractableBody owner;
+public class RightBound extends Bound {
 
     public RightBound(double value, InteractableBody owner) {
-        super(value);
-        this.owner = owner;
-    }
-
-    public InteractableBody getOwner() {
-        return owner;
+        super(value, owner);
     }
 }
