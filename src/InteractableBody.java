@@ -11,6 +11,8 @@ import java.util.List;
 public class InteractableBody extends Circle {
 
     private static int numberOfObjects = 0;
+    private int collisionGracePeriod;
+    protected int age = 0;
     private double vx, vy;
     private LeftBound leftBound;
     private RightBound rightBound;
@@ -32,6 +34,8 @@ public class InteractableBody extends Circle {
         isFirstUpdate = true;
         simulationX = x;
         simulationY = y;
+        previousX = x;
+        previousY = y;
         leftBound = new LeftBound(simulationX - interactableRadius, this);
         rightBound = new RightBound(simulationX + interactableRadius, this);
         this.mass = mass;
@@ -55,6 +59,7 @@ public class InteractableBody extends Circle {
     }
 
     public void updateVelocity() {
+        age++;
         double accelX = 0;
         double accelY = 0;
         for (InteractableBody b : simulation.getInteractableObjects()) {
@@ -73,7 +78,8 @@ public class InteractableBody extends Circle {
     }
 
     public CollisionGroup detectCollisions() {
-        if(markedForCollision) return null;
+        if(age < collisionGracePeriod) return null;
+        if (markedForCollision) return null;
         List<InteractableBody> collisionObjects = Collections.synchronizedList(new ArrayList<>());
 //        System.out.println(this + ": " + potentialIntersections);
         potentialIntersections.parallelStream()
@@ -81,12 +87,12 @@ public class InteractableBody extends Circle {
                 .forEach(b -> {
                     if (
                             !b.equals(this) &&
-                            !(mass == 0 && b.getMass() == 0) &&
-                            !b.markedForCollision &&
-                            Math.sqrt(
-                                    (simulationX - b.getSimulationX()) * (simulationX - b.getSimulationX()) +
-                                            (simulationY - b.getSimulationY()) * (simulationY - b.getSimulationY())) < interactableRadius + b.interactableRadius &&
-                            !(b instanceof StationaryInteractableBody)) {
+                                    !(mass == 0 && b.getMass() == 0) &&
+                                    !b.markedForCollision &&
+                                    b.age > b.collisionGracePeriod &&
+                                    Math.sqrt((simulationX - b.getSimulationX()) * (simulationX - b.getSimulationX()) +
+                                                    (simulationY - b.getSimulationY()) * (simulationY - b.getSimulationY())) < interactableRadius + b.interactableRadius &&
+                                    !(b instanceof StationaryInteractableBody)) {
                         collisionObjects.add(b);
                         b.markedForCollision = true;
                         markedForCollision = true;
@@ -134,6 +140,15 @@ public class InteractableBody extends Circle {
         simulation.getBounds().remove(rightBound);
         if (this.equals(simulation.getFocusBody())) simulation.setFocusBody(null);
         if (this.equals(simulation.getSelectedBody())) simulation.setSelectedBody(null);
+        if (this.equals(simulation.getDraggingBody())) simulation.setDraggingBody(null);
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setCollisionGracePeriod(int collisionGracePeriod) {
+        this.collisionGracePeriod = collisionGracePeriod;
     }
 
     public double getMass() {
@@ -170,6 +185,14 @@ public class InteractableBody extends Circle {
 
     public double getVY() {
         return vy;
+    }
+
+    public void accelerateXBy(double accelX) {
+        vx += accelX;
+    }
+
+    public void accelerateYBy(double accelY) {
+        vy += accelY;
     }
 
     public void setPreviousX(double previousX) {

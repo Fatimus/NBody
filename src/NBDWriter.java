@@ -6,16 +6,16 @@ import java.util.Scanner;
 
 public class NBDWriter {
 
-    private final String PATH = "D:\\Files\\N-Body Files\\";
+    //    private String path = "D:\\Files\\N-Body Files\\";
+    private String path;
+    private String name;
+    FileWriter writer;
 
-    public void write() {
+    public NBDWriter(String path, String name) {
+        this.path = path;
+        this.name = name;
         try {
-            FileWriter nbdWriter = new FileWriter(PATH + "Trappist-1.nbd");
-            /**
-             * FORMAT:
-             * "x y vx vy mass isStationary color"
-             */
-
+            writer = new FileWriter(path + name);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -24,16 +24,15 @@ public class NBDWriter {
     public void write(ArrayList<InteractableBody> list) {
         int count = 0;
         try {
-            FileWriter nbdWriter = new FileWriter(PATH + "compact object rips swarm apart.nbd");
-            for(InteractableBody b : list) {
-                nbdWriter.write(dataFrom(b));
-                nbdWriter.flush();
+            for (InteractableBody b : list) {
+                writer.write(getDataFrom(b));
+                writer.flush();
                 count++;
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Operation Completed with " + count + " objects written to disk");
+//        System.out.println("Operation Completed with " + count + " objects written to disk");
     }
 
     public void update(String fileName) {
@@ -42,7 +41,7 @@ public class NBDWriter {
             Scanner scan = new Scanner(nbd);
             int count = 0;
             try {
-                FileWriter nbdWriter = new FileWriter(PATH + fileName + ".nbd");
+                FileWriter nbdWriter = new FileWriter(path + fileName + ".nbd");
                 while (scan.hasNextLine()) {
                     nbdWriter.write(scan.nextDouble() + " ");
                     nbdWriter.write(scan.nextDouble() + " ");
@@ -80,7 +79,7 @@ public class NBDWriter {
                         System.getProperty("line.separator");
     }
 
-    private static String dataFrom(InteractableBody b) {
+    private static String getDataFrom(InteractableBody b) {
         return
                 b.getSimulationX() + " " +
                         b.getSimulationY() + " " +
@@ -88,7 +87,8 @@ public class NBDWriter {
                         b.getMass() + " " +
                         b.getInteractableRadius() + " " +
                         (b instanceof StationaryInteractableBody) + " " +
-                        ((Color)(b.getFill())).toString() +
+                        ((Color) (b.getFill())).toString() +
                         System.getProperty("line.separator");
     }
+
 }

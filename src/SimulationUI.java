@@ -1,18 +1,16 @@
-import com.sun.javafx.tk.Toolkit;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import javafx.stage.Screen;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,8 +25,11 @@ public class SimulationUI extends Group {
     public SettableNumberField playbackSpeedField;
     public CheckBox trailsEnabled;
     public CheckBox collisionsEnabled;
+    public CheckBox splittingEnabled;
     public Button clippingTypeSelector;
     public Button focusBodySetter;
+    public Button dragSetter;
+    public Button stepFrameButton;
     public Button playPauseButton;
     public Button backButton;
     public ImageView playIcon;
@@ -37,7 +38,7 @@ public class SimulationUI extends Group {
     public Text fpsCounter;
     public Text objectCounter;
     public Button fileOpenerButton;
-    public Button stepFrameButton;
+    public Button bakeButton;
 
     public SimulationUI(Simulation simulation) {
         this.simulation = simulation;
@@ -48,10 +49,13 @@ public class SimulationUI extends Group {
                 clear(),
                 clearTrails(), enableTrails(),
                 enableCollisions(),
+                enableSplitting(),
                 clippingTypePrompt(), collisionlessClippingType(),
                 focusBodySetter(),
-                fileOpener(),
+                dragSetter(),
                 stepFrame(),
+                fileOpener(),
+                setBakeButton(),
                 fpsCounter(),
                 objectCounter());
     }
@@ -92,6 +96,7 @@ public class SimulationUI extends Group {
             }
             objectCounter.setText("Objects: " + simulation.getStartConditions().size());
             if (simulation.isPlaying()) playPauseButton.fire();
+            simulation.setFrame(0);
         });
         return backButton;
     }
@@ -110,12 +115,14 @@ public class SimulationUI extends Group {
                 playPauseButton.setGraphic(pauseIcon);
                 playingStatus.setText("Playing");
                 playingStatus.setFill(Color.GREEN);
+                bakeButton.setDisable(true);
                 simulation.setPlaying(true);
             } else {
                 simulation.stop();
                 playPauseButton.setGraphic(playIcon);
                 playingStatus.setText("Paused");
                 playingStatus.setFill(Color.RED);
+                bakeButton.setDisable(false);
                 simulation.setPlaying(false);
             }
         });
@@ -182,12 +189,12 @@ public class SimulationUI extends Group {
         collisionsEnabled.setSelected(true);
         collisionsEnabled.setTranslateX(460);
         collisionsEnabled.setTranslateY(23);
-        collisionsEnabled.selectedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                clippingTypeSelector.setDisable(newValue);
-            }
-        });
+//        collisionsEnabled.selectedProperty().addListener(new ChangeListener<Boolean>() {
+//            @Override
+//            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+//                splittingEnabled.setDisable(!newValue);
+//            }
+//        });
         return collisionsEnabled;
     }
 
@@ -201,17 +208,34 @@ public class SimulationUI extends Group {
 
     private Button focusBodySetter() {
         focusBodySetter = new Button("Track Object");
-        focusBodySetter.setPrefWidth(120);
+        focusBodySetter.setPrefWidth(100);
         focusBodySetter.setTranslateX(460);
-        focusBodySetter.setTranslateY(80);
-        focusBodySetter.setOnAction(e -> {
-            simulation.setFocusBody(simulation.getSelectedBody());
-        });
+        focusBodySetter.setTranslateY(90);
+        focusBodySetter.setOnAction(e -> simulation.setFocusBody(simulation.getSelectedBody()));
         return focusBodySetter;
+    }
+
+    private Button dragSetter() {
+        dragSetter = new Button("Drag Object");
+        dragSetter.setPrefWidth(100);
+        dragSetter.setTranslateX(570);
+        dragSetter.setTranslateY(90);
+        dragSetter.setOnAction(e -> simulation.setDraggingBody(simulation.getSelectedBody()));
+        return dragSetter;
+    }
+
+    private Button stepFrame() {
+        stepFrameButton = new Button("Step Frame");
+        stepFrameButton.setTranslateX(680);
+        stepFrameButton.setTranslateY(90);
+        stepFrameButton.setPrefWidth(100);
+        stepFrameButton.setOnAction(e -> simulation.handle(0));
+        return stepFrameButton;
     }
 
     private Button collisionlessClippingType() {
         clippingTypeSelector = new Button("Soft");
+        clippingTypeSelector.disableProperty().bindBidirectional(collisionsEnabled.selectedProperty());
         clippingTypeSelector.setDisable(true);
         clippingTypeSelector.setOnAction(e -> {
             if (clippingTypeSelector.getText().equals("Soft")) {
@@ -224,23 +248,32 @@ public class SimulationUI extends Group {
         return clippingTypeSelector;
     }
 
+    private CheckBox enableSplitting() {
+        splittingEnabled = new CheckBox("Split on Collision");
+        splittingEnabled.disableProperty().bind(collisionsEnabled.selectedProperty().not());
+        splittingEnabled.setTranslateX(620);
+        splittingEnabled.setTranslateY(23);
+        return splittingEnabled;
+    }
+
     private Button fileOpener() {
         fileOpenerButton = new Button("Open File");
-        fileOpenerButton.setTranslateX(640);
+        fileOpenerButton.setTranslateX(800);
         fileOpenerButton.setTranslateY(20);
         fileOpenerButton.setPrefWidth(100);
         fileOpenerButton.setOnAction(e -> {
             FileChooser chooser = new FileChooser();
-            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("N-Body Files", "*.nbd"));
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("N-Body Files", "*.nbd", "*.nbb"));
             chooser.setTitle("Open Simulation");
             File simulationFile = chooser.showOpenDialog(simulation.getStage());
-            if(simulationFile != null) {
+            if (simulationFile != null) {
                 Scanner scan;
                 try {
                     scan = new Scanner(simulationFile);
                     simulation.clear();
                     simulation.getStartConditions().clear();
-                    while(scan.hasNextLine()) {
+
+                    if(simulationFile.getName().substring(simulationFile.getName().length() - 4).equals(".nbd")) while (scan.hasNextLine()) {
                         simulation.addStartInfo(
                                 simulation.createObject(
                                         scan.nextDouble(),
@@ -254,8 +287,10 @@ public class SimulationUI extends Group {
                                 )
                         );
                         scan.nextLine();
+                    } else if(simulationFile.getName().substring(simulationFile.getName().length() - 4).equals(".nbb")) while(scan.hasNextLine()) {
+
                     }
-                    if(simulation.isPlaying()) playPauseButton.fire();
+                    if (simulation.isPlaying()) playPauseButton.fire();
                 } catch (FileNotFoundException exception) {
                     exception.printStackTrace();
                 }
@@ -263,13 +298,22 @@ public class SimulationUI extends Group {
         });
         return fileOpenerButton;
     }
-    private Button stepFrame() {
-        stepFrameButton = new Button("Step Frame");
-        stepFrameButton.setTranslateX(640);
-        stepFrameButton.setTranslateY(55);
-        stepFrameButton.setPrefWidth(100);
-        stepFrameButton.setOnAction(e -> simulation.handle(0));
-        return stepFrameButton;
+
+    public Button setBakeButton() {
+        bakeButton = new Button("Bake");
+        bakeButton.setPrefWidth(100);
+        bakeButton.setTranslateX(800);
+        bakeButton.setTranslateY(50);
+        bakeButton.setOnMouseClicked(e -> {
+            Stage bakeStage = new Stage();
+            bakeStage.setTitle("Bake");
+            bakeStage.setWidth(400);
+            bakeStage.setHeight(200);
+            bakeStage.setResizable(false);
+            bakeStage.setScene(new Scene(new BakeUI(simulation, bakeStage)));
+            bakeStage.show();
+        });
+        return bakeButton;
     }
 
     private void setBackIcon() {

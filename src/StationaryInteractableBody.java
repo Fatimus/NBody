@@ -5,7 +5,9 @@ public class StationaryInteractableBody extends InteractableBody {
     }
 
     @Override
-    public void updateVelocity() { }
+    public void updateVelocity() {
+        age++;
+    }
 
     @Override
     public void updateLocation(double factor) {}
