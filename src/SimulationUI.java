@@ -23,6 +23,7 @@ public class SimulationUI extends Group {
     public Text playingStatus;
     public SettableNumberField massField;
     public SettableNumberField playbackSpeedField;
+    public SettableNumberField trailLengthField;
     public CheckBox trailsEnabled;
     public CheckBox collisionsEnabled;
     public CheckBox splittingEnabled;
@@ -40,6 +41,8 @@ public class SimulationUI extends Group {
     public Button fileOpenerButton;
     public Button bakeButton;
 
+//    private double
+
     public SimulationUI(Simulation simulation) {
         this.simulation = simulation;
         getChildren().addAll(
@@ -48,6 +51,7 @@ public class SimulationUI extends Group {
                 massPrompt(), massField(),
                 clear(),
                 clearTrails(), enableTrails(),
+                trailLengthPrompt(), trailLengthField(),
                 enableCollisions(),
                 enableSplitting(),
                 clippingTypePrompt(), collisionlessClippingType(),
@@ -65,7 +69,7 @@ public class SimulationUI extends Group {
         if (simulation.BACKGROUND_BLACK) prompt.setFill(Color.gray(0.7));
         prompt.setFont(Font.font(15));
         prompt.setTranslateX(20);
-        prompt.setTranslateY(93.5);
+        prompt.setTranslateY(103.5);
         return prompt;
     }
 
@@ -73,7 +77,7 @@ public class SimulationUI extends Group {
         playbackSpeedField = new SettableNumberField(1);
         playbackSpeedField.setPrefWidth(110);
         playbackSpeedField.setTranslateX(145);
-        playbackSpeedField.setTranslateY(76);
+        playbackSpeedField.setTranslateY(86);
         playbackSpeedField.setProperty().addListener(new ChangeListener<Boolean>() {
             @Override
             public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
@@ -88,7 +92,7 @@ public class SimulationUI extends Group {
         setBackIcon();
         backButton.setGraphic(backIcon);
         backButton.setTranslateX(260);
-        backButton.setTranslateY(70);
+        backButton.setTranslateY(80);
         backButton.setOnAction(e -> {
             simulation.clear();
             for (StartConditions c : simulation.getStartConditions()) {
@@ -108,7 +112,7 @@ public class SimulationUI extends Group {
         simulation.setPlaying(false);
         playPauseButton.setGraphic(playIcon);
         playPauseButton.setTranslateX(305);
-        playPauseButton.setTranslateY(70);
+        playPauseButton.setTranslateY(80);
         playPauseButton.setOnAction(e -> {
             if (!simulation.isPlaying()) {
                 simulation.start();
@@ -134,7 +138,7 @@ public class SimulationUI extends Group {
         playingStatus.setFill(Color.RED);
         playingStatus.setFont(Font.font(20));
         playingStatus.setTranslateX(355);
-        playingStatus.setTranslateY(95);
+        playingStatus.setTranslateY(105);
         return playingStatus;
     }
 
@@ -181,6 +185,29 @@ public class SimulationUI extends Group {
         trailsEnabled.setTranslateX(345);
         trailsEnabled.setTranslateY(23);
         return trailsEnabled;
+    }
+
+    private Text trailLengthPrompt() {
+        Text trailLengthPrompt = new Text("Trail Length:");
+        if (simulation.BACKGROUND_BLACK) trailLengthPrompt.setFill(Color.gray(0.7));
+        trailLengthPrompt.setTranslateX(267);
+        trailLengthPrompt.setTranslateY(67);
+        trailLengthPrompt.setFont(Font.font(13));
+        return trailLengthPrompt;
+    }
+
+    private SettableNumberField trailLengthField() {
+        trailLengthField = new SettableNumberField(Simulation.DEFAULT_TRAIL_LENGTH);
+        trailLengthField.setPrefWidth(100);
+        trailLengthField.setTranslateX(345);
+        trailLengthField.setTranslateY(49);
+        trailLengthField.setProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                simulation.setTrailLength((int)trailLengthField.getValue());
+            }
+        });
+        return trailLengthField;
     }
 
     private CheckBox enableCollisions() {
@@ -273,23 +300,28 @@ public class SimulationUI extends Group {
                     simulation.clear();
                     simulation.getStartConditions().clear();
 
-                    if(simulationFile.getName().substring(simulationFile.getName().length() - 4).equals(".nbd")) while (scan.hasNextLine()) {
-                        simulation.addStartInfo(
-                                simulation.createObject(
-                                        scan.nextDouble(),
-                                        scan.nextDouble(),
-                                        scan.nextDouble(),
-                                        scan.nextDouble(),
-                                        scan.nextDouble(),
-                                        scan.nextDouble(),
-                                        scan.nextBoolean(),
-                                        Color.valueOf(scan.next())
-                                )
-                        );
-                        scan.nextLine();
-                    } else if(simulationFile.getName().substring(simulationFile.getName().length() - 4).equals(".nbb")) while(scan.hasNextLine()) {
+                    if (simulationFile.getName().substring(simulationFile.getName().length() - 4).equals(".nbd"))
+                        while (scan.hasNextLine()) {
+                            simulation.addStartInfo(
+                                    simulation.createObject(
+                                            scan.nextDouble(),
+                                            scan.nextDouble(),
+                                            scan.nextDouble(),
+                                            scan.nextDouble(),
+                                            scan.nextDouble(),
+                                            scan.nextDouble(),
+                                            InteractableBody.CollisionMode.FULL,
+                                            false,
+                                            scan.nextBoolean(),
+                                            Color.valueOf(scan.next())
+                                    )
+                            );
+                            scan.nextLine();
+                        }
+                    else if (simulationFile.getName().substring(simulationFile.getName().length() - 4).equals(".nbb"))
+                        while (scan.hasNextLine()) {
 
-                    }
+                        }
                     if (simulation.isPlaying()) playPauseButton.fire();
                 } catch (FileNotFoundException exception) {
                     exception.printStackTrace();

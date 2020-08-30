@@ -1,5 +1,6 @@
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -10,7 +11,6 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
@@ -40,11 +40,13 @@ public class Simulation extends AnimationTimer {
     private int second = 0;
     private int frames = 0;
     public int frame = 0;
+    private int trailLength;
     private double simulationDifferenceX, simulationDifferenceY;
     private double editorDifferenceX, editorDifferenceY;
     private double playbackSpeed = 1;
-    public final double GRAVITATIONAL_CONSTANT = 2;
-    public final double MATERIAL_BINDING_CONSTANT = 1;
+    public static final double GRAVITATIONAL_CONSTANT = 2;
+    public static final double MATERIAL_BINDING_CONSTANT = 1;
+    public static final int DEFAULT_TRAIL_LENGTH = 240;
     private boolean playing;
     private boolean dragging = false;
     private boolean baking = false;
@@ -61,6 +63,7 @@ public class Simulation extends AnimationTimer {
         startConditions = new ArrayList<>();
         simulationUI = new SimulationUI(this);
         editorUI = new EditorUI(this);
+        trailLength = DEFAULT_TRAIL_LENGTH;
         myWindow.getChildren().addAll(
                 simulationView(),
                 editorView(),
@@ -262,6 +265,7 @@ public class Simulation extends AnimationTimer {
                         (vectorLine.getEndX() - vectorLine.getStartX()) / 50 + (hasFocusBody() ? focusBody.getVX() : 0),
                         (vectorLine.getEndY() - vectorLine.getStartY()) / 50 + (hasFocusBody() ? focusBody.getVY() : 0),
                         Double.parseDouble(simulationUI.massField.getText()),
+                        InteractableBody.CollisionMode.FULL,
                         this);
                 addObject(b);
             }
@@ -279,21 +283,22 @@ public class Simulation extends AnimationTimer {
          * EXPERIMENTATION SECTION
          */
 
-//        double r = 9300;
-//        double mP = 1000000000000D;
-//        createObject(900, 500 + r, 0, 0, mP);
-//        createObject(900, 500, Math.sqrt(GRAVITATIONAL_CONSTANT * mP / r), 0, 10);
-
-
-//        for (int i = 0; i < 10; i++) {
-//            for (int j = 0; j < 70; j++) {
-//                double angle = Math.random() * 2 * Math.PI;
-//                double radius = 9200 + 5 * i + Math.random() * 5;
-//                double tx = centerX + radius * Math.cos(angle);
-//                double ty = 500 + r + radius * Math.sin(angle);
-//                addStartInfo(createObject(tx, ty, 0, 0, 0, InteractableBody.defaultRadius(0), true, Color.DARKBLUE));
-//            }
-//        }
+        /**
+         * Planet formation
+         */
+        InteractableBody star = createObject(900, 500, 0, 0, 10000, Color.ORANGE);
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 100 + 2 * Math.PI * (i / 3); j++) {
+                double angle = Math.random() * 2 * Math.PI;
+                double radius = 100 + 10 * i + Math.random() * 20;
+                double tx = centerX + radius * Math.cos(angle);
+                double ty = centerY + radius * Math.sin(angle);
+                double speed = Math.sqrt(GRAVITATIONAL_CONSTANT * star.getMass() / radius);
+                double vx = star.getVX() - speed * Math.sin(angle);
+                double vy = star.getVY() + speed * Math.cos(angle);
+                createObject(tx, ty, vx, vy, 0.01);
+            }
+        }
 
         /**
          * RANDOMIZED RECTANGLE
@@ -310,19 +315,19 @@ public class Simulation extends AnimationTimer {
         /**
          * DEFAULT OBJECT WITH RING
          */
-        InteractableBody center = createObject(centerX, centerY, 0, 0, 1000);
-        for (int i = 0; i < 40; i++) {
-            for (int j = 0; j < 40; j++) {
-                double angle = Math.random() * 2 * Math.PI;
-                double radius = 50 + 2 * i + Math.random() * 3;
-                double tx = centerX + radius * Math.cos(angle);
-                double ty = centerY + radius * Math.sin(angle);
-                double speed = Math.sqrt(GRAVITATIONAL_CONSTANT * center.getMass() / radius);
-                double vx = center.getVX() - speed * Math.sin(angle);
-                double vy = center.getVY() + speed * Math.cos(angle);
-                createObject(tx, ty, vx, vy, 0);
-            }
-        }
+//        InteractableBody center = createObject(centerX, centerY, 0, 0, 1000);
+//        for (int i = 0; i < 40; i++) {
+//            for (int j = 0; j < 40; j++) {
+//                double angle = Math.random() * 2 * Math.PI;
+//                double radius = 50 + 2 * i + Math.random() * 3;
+//                double tx = centerX + radius * Math.cos(angle);
+//                double ty = centerY + radius * Math.sin(angle);
+//                double speed = Math.sqrt(GRAVITATIONAL_CONSTANT * center.getMass() / radius);
+//                double vx = center.getVX() - speed * Math.sin(angle);
+//                double vy = center.getVY() + speed * Math.cos(angle);
+//                createObject(tx, ty, vx, vy, 0);
+//            }
+//        }
 //        InteractableBody boi = createObject(centerX + 91,
 //                centerY,
 //                0,
@@ -352,12 +357,12 @@ public class Simulation extends AnimationTimer {
 //                double radius = i + Math.random();
 //                double tx = centerX + radius * Math.cos(angle);
 //                double ty = centerY + radius * Math.sin(angle);
-//                createObject(tx, ty, 12, 0, 0.1);
+//                createObject(tx, ty, 0, 0, 0.1);
 //            }
 //        }
 
         /**
-         * SCATTERING0
+         * SCATTERING
          */
 //        for(int i = 0; i < 1000; i++) {
 //            createObject(500, 450 + 0.4 * i, 20, 0, 0);
@@ -443,31 +448,46 @@ public class Simulation extends AnimationTimer {
     }
 
     public InteractableBody createObject(StartConditions c) {
-        return createObject(c.getX(), c.getY(), c.getVX(), c.getVY(), c.getMass(), c.getInteractableRadius(), c.isStationary(), c.getColor());
+        return createObject(c.getX(), c.getY(), c.getVX(), c.getVY(), c.getMass(), c.getInteractableRadius(), c.getCollisionMode(), c.isGasParticle(), c.isStationary(), c.getColor());
+    }
+
+    public GasParticle createGasParticle(double x, double y, double vx, double vy, double mass) {
+        GasParticle g = (GasParticle)createObject(x, y, vx, vy, mass, InteractableBody.defaultRadius(mass), InteractableBody.CollisionMode.DISABLED, true, false, Color.RED);
+        addStartInfo(g);
+        return g;
     }
 
     public InteractableBody createObject(double x, double y, double vx, double vy, double mass) {
-        InteractableBody b = passCreatedObject(x, y, vx, vy, mass, InteractableBody.defaultRadius(mass), false, Color.BLACK);
-        return b;
+        return passCreatedObject(x, y, vx, vy, mass, InteractableBody.defaultRadius(mass), false, InteractableBody.CollisionMode.FULL, Color.BLACK);
+    }
+    public InteractableBody createObject(double x, double y, double vx, double vy, double mass, Color color) {
+        return passCreatedObject(x, y, vx, vy, mass, InteractableBody.defaultRadius(mass), false, InteractableBody.CollisionMode.FULL, color);
     }
 
-    private InteractableBody passCreatedObject(double x, double y, double vx, double vy, double mass, double interactableRadius, boolean isStationary, Color color) {
-        InteractableBody b = createObject(x, y, vx, vy, mass, interactableRadius, isStationary, color);
+    public InteractableBody createObject(double x, double y, double vx, double vy, double mass, InteractableBody.CollisionMode collisionMode) {
+        return passCreatedObject(x, y, vx, vy, mass, InteractableBody.defaultRadius(mass), false, collisionMode, Color.BLACK);
+    }
+
+    private InteractableBody passCreatedObject(double x, double y, double vx, double vy, double mass, double interactableRadius, boolean isStationary, InteractableBody.CollisionMode collisionMode, Color color) {
+        InteractableBody b = createObject(x, y, vx, vy, mass, interactableRadius, collisionMode, false, isStationary, color);
         addStartInfo(b);
         return b;
     }
 
-    public InteractableBody createObjectIgnoreRate(double x, double y, double vx, double vy, double mass, double interactableRadius, boolean isStationary, Color color) {
-        return createObject(x, y, vx / playbackSpeed, vy / playbackSpeed, mass, interactableRadius, isStationary, color);
+    public InteractableBody createObjectIgnoreRate(double x, double y, double vx, double vy, double mass, double interactableRadius, boolean isStationary, InteractableBody.CollisionMode collisionMode, Color color) {
+        return createObject(x, y, vx / playbackSpeed, vy / playbackSpeed, mass, interactableRadius, collisionMode, false, isStationary, color);
     }
 
-    public InteractableBody createObject(double x, double y, double vx, double vy, double mass, double interactableRadius, boolean isStationary, Color color) {
+    public InteractableBody createObject(double x, double y, double vx, double vy, double mass, double interactableRadius, InteractableBody.CollisionMode collisionMode, boolean isGasParticle, boolean isStationary, Color color) {
         InteractableBody b;
         if (isStationary) {
-            b = new StationaryInteractableBody(mass, x, y, this);
+            b = new StationaryInteractableBody(x, y, mass, collisionMode, this);
+            b.setFill(color);
+        } else if (isGasParticle) {
+            b = new GasParticle(x, y, vx, vy, mass, this);
             b.setFill(color);
         } else {
-            b = new InteractableBody(x, y, vx * playbackSpeed, vy * playbackSpeed, mass, this);
+            b = new InteractableBody(x, y, vx * playbackSpeed, vy * playbackSpeed, mass, collisionMode, this);
             b.setFill(color);
         }
         b.setInteractableRadius(interactableRadius);
@@ -505,15 +525,15 @@ public class Simulation extends AnimationTimer {
         averagePX /= totalMass;
         averagePY /= totalMass;
         InteractableBody mergedBody = null;
-        if(!isSplittingEnabled()) mergedBody = createObjectIgnoreRate(
+        if (!isSplittingEnabled()) mergedBody = createObjectIgnoreRate(
                 averagePX,
                 averagePY,
                 averageVX,
                 averageVY,
                 totalMass,
                 InteractableBody.defaultRadius(totalMass),
-                largestObject instanceof StationaryInteractableBody,
-                (Color) largestObject.getFill());
+                largestObject instanceof StationaryInteractableBody, InteractableBody.CollisionMode.FULL, (Color) largestObject.getFill()
+        );
         else {
             /**
              * Find the total kinetic energy of the colliding system. If it exceeds the gravitational binding energy of the would-be merged object,
@@ -521,17 +541,17 @@ public class Simulation extends AnimationTimer {
              * Apply a random exit speed to the debris with an average proportional to the square root of kinetic energy, and apply randomness.
              */
             double totalKineticEnergy = 0;
-            for(InteractableBody b : objects) {
+            for (InteractableBody b : objects) {
                 double relativeVelocity = Math.sqrt((b.getVX() - averageVX) * (b.getVX() - averageVX) + (b.getVY() - averageVY) * (b.getVY() - averageVY));
                 totalKineticEnergy += 0.5 * b.getMass() * relativeVelocity * relativeVelocity;
             }
             double gravitationalBindingEnergy = 3.0 * GRAVITATIONAL_CONSTANT * playbackSpeed * playbackSpeed * totalMass * totalMass / 5.0 / InteractableBody.defaultRadius(totalMass);
             double materialBindingEnergy = MATERIAL_BINDING_CONSTANT / totalMass;
-            if(totalKineticEnergy > gravitationalBindingEnergy + materialBindingEnergy) {
-                int debrisCount = (int)(Math.random() * 5) + 10;
+            if (totalKineticEnergy > gravitationalBindingEnergy + materialBindingEnergy) {
+                int debrisCount = (int) (Math.random() * 5) + 10;
                 double individualMass = totalMass / debrisCount;
                 double averageExitKineticEnergy = totalKineticEnergy / debrisCount;
-                for(int i = 0; i < debrisCount; i++) {
+                for (int i = 0; i < debrisCount; i++) {
                     double exitKineticEnergy = 2 * Math.random() * averageExitKineticEnergy;
                     double exitSpeed = Math.sqrt(2 * exitKineticEnergy / individualMass) / playbackSpeed;
                     double exitAngle = Math.random() * 2 * Math.PI;
@@ -542,9 +562,9 @@ public class Simulation extends AnimationTimer {
                             averageVY / playbackSpeed + exitSpeed * Math.sin(exitAngle),
                             individualMass,
                             InteractableBody.defaultRadius(individualMass),
-                            false,
-                            (Color)largestObject.getFill());
-                    debris.setCollisionGracePeriod((int)Math.ceil(InteractableBody.defaultRadius(individualMass) / exitSpeed * playbackSpeed * playbackSpeed));
+                            InteractableBody.CollisionMode.FULL,
+                            false, false, (Color) largestObject.getFill());
+                    debris.setCollisionGracePeriod((int) Math.ceil(InteractableBody.defaultRadius(individualMass) / exitSpeed * playbackSpeed * playbackSpeed));
                 }
             } else mergedBody = createObjectIgnoreRate(
                     averagePX,
@@ -553,8 +573,8 @@ public class Simulation extends AnimationTimer {
                     averageVY,
                     totalMass,
                     InteractableBody.defaultRadius(totalMass),
-                    largestObject instanceof StationaryInteractableBody,
-                    (Color) largestObject.getFill());
+                    largestObject instanceof StationaryInteractableBody, InteractableBody.CollisionMode.FULL, (Color) largestObject.getFill()
+            );
         }
         if (hasSelectedBody) setSelectedBody(mergedBody);
         if (hasFocusBody) setFocusBody(mergedBody);
@@ -628,6 +648,12 @@ public class Simulation extends AnimationTimer {
             b.updateVisualLocation();
             totalMass += b.getMass();
         }
+        for(Node l : trails.getChildren()) {
+            ((TrailLink)l).age();
+        }
+        for(int i = 0; i < trails.getChildren().size(); i++) {
+            if(((TrailLink)trails.getChildren().get(i)).removeIfAgeExceeded()) i--;
+        }
         selector.updateSelectorSize();
         focusIndicator.updateSelectorSize();
         //update drag indicator
@@ -654,9 +680,9 @@ public class Simulation extends AnimationTimer {
         simulationUI.objectCounter.setText("Objects: " + interactableObjects.size());
         frames++;
 
-        if(baking) {
+        if (baking) {
             nbbWriter.bakeFrame(frame, interactableObjects);
-            if(frame == nbbWriter.getLengthFrames()) stopBake();
+            if (frame == nbbWriter.getLengthFrames()) stopBake();
         }
 
         /**
@@ -729,6 +755,15 @@ public class Simulation extends AnimationTimer {
 
     public double getPlaybackSpeed() {
         return playbackSpeed;
+    }
+
+    public int getTrailLength() {
+        return trailLength;
+    }
+
+    public void setTrailLength(int trailLength) {
+        this.trailLength = trailLength;
+        System.out.println(trailLength);
     }
 
     public ArrayList<InteractableBody> getInteractableObjects() {

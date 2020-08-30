@@ -8,7 +8,9 @@ public class StartConditions {
     private double vy;
     private double mass;
     private double interactableRadius;
-    private boolean stationary;
+    private boolean isStationary;
+    private boolean isGasParticle;
+    private InteractableBody.CollisionMode collisionMode;
     private Color color;
 
     public StartConditions(InteractableBody b) {
@@ -18,17 +20,20 @@ public class StartConditions {
         this.vy = b.getVY();
         this.mass = b.getMass();
         this.interactableRadius = b.getInteractableRadius();
-        this.stationary = b instanceof StationaryInteractableBody;
+        this.isStationary = b instanceof StationaryInteractableBody;
+        this.isGasParticle = b instanceof GasParticle;
         this.color = (Color)b.getFill();
+        this.collisionMode = b.getCollisionMode();
     }
 
-    public StartConditions(double x, double y, double vx, double vy, double mass, boolean stationary, Color color) {
+    public StartConditions(double x, double y, double vx, double vy, double mass, boolean isStationary, boolean isGasParticle, Color color) {
         this.x = x;
         this.y = y;
         this.vx = vx;
         this.vy = vy;
         this.mass = mass;
-        this.stationary = stationary;
+        this.isStationary = isStationary;
+        this.isGasParticle = isGasParticle;
         this.color = color;
     }
 
@@ -61,6 +66,14 @@ public class StartConditions {
     }
 
     public boolean isStationary() {
-        return stationary;
+        return isStationary;
+    }
+
+    public boolean isGasParticle() {
+        return isGasParticle;
+    }
+
+    public InteractableBody.CollisionMode getCollisionMode() {
+        return collisionMode;
     }
 }

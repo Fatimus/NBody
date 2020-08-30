@@ -10,6 +10,8 @@ public class Main extends Application {
 
     public void start(Stage s) {
         Stage stage = s;
+        stage.setWidth(1280);
+        stage.setHeight(720);
         stage.setMaximized(true);
         stage.setScene(new Scene(new Simulation().setUpWindow(stage)));
         stage.show();

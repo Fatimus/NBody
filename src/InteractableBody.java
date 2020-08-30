@@ -22,10 +22,17 @@ public class InteractableBody extends Circle {
     private double interactableRadius;
     private boolean isFirstUpdate;
     private boolean markedForCollision = false;
+    private CollisionMode collisionMode;
     private HashSet<InteractableBody> potentialIntersections = new HashSet<>();
     protected Simulation simulation;
 
-    public InteractableBody(double x, double y, double vx, double vy, double mass, Simulation simulation) {
+    public enum CollisionMode {
+        FULL,
+        PARTIAL,
+        DISABLED
+    }
+
+    public InteractableBody(double x, double y, double vx, double vy, double mass, CollisionMode mode, Simulation simulation) {
         super(
                 x - (simulation.hasFocusBody() ? simulation.getFocusBody().getSimulationX() - simulation.getFocusBody().getCenterX() : 0),
                 y - (simulation.hasFocusBody() ? simulation.getFocusBody().getSimulationY() - simulation.getFocusBody().getCenterY() : 0),
@@ -42,6 +49,7 @@ public class InteractableBody extends Circle {
         this.vx = vx;
         this.vy = vy;
         this.simulation = simulation;
+        collisionMode = mode;
         numberOfObjects++;
 
         /**
@@ -67,9 +75,9 @@ public class InteractableBody extends Circle {
                 double distance = Math.sqrt((simulationX - b.getSimulationX()) * (simulationX - b.getSimulationX()) + (simulationY - b.getSimulationY()) * (simulationY - b.getSimulationY()));
                 double inverseDistance = 1 / distance;
                 if (distance >= interactableRadius + b.interactableRadius || simulation.getClippingType().equals("Full")) {
-                    double force = calculateForce(b.mass, inverseDistance);
-                    accelX += (simulationX - b.simulationX) * inverseDistance * force;
-                    accelY += (simulationY - b.simulationY) * inverseDistance * force;
+                    double acceleration = calculateAcceleration(b, inverseDistance, distance);
+                    accelX += (simulationX - b.simulationX) * inverseDistance * acceleration;
+                    accelY += (simulationY - b.simulationY) * inverseDistance * acceleration;
                 }
             }
         }
@@ -78,21 +86,14 @@ public class InteractableBody extends Circle {
     }
 
     public CollisionGroup detectCollisions() {
-        if(age < collisionGracePeriod) return null;
+        if (age < collisionGracePeriod) return null;
         if (markedForCollision) return null;
         List<InteractableBody> collisionObjects = Collections.synchronizedList(new ArrayList<>());
 //        System.out.println(this + ": " + potentialIntersections);
         potentialIntersections.parallelStream()
 //        simulation.getInteractableObjects().parallelStream()
                 .forEach(b -> {
-                    if (
-                            !b.equals(this) &&
-                                    !(mass == 0 && b.getMass() == 0) &&
-                                    !b.markedForCollision &&
-                                    b.age > b.collisionGracePeriod &&
-                                    Math.sqrt((simulationX - b.getSimulationX()) * (simulationX - b.getSimulationX()) +
-                                                    (simulationY - b.getSimulationY()) * (simulationY - b.getSimulationY())) < interactableRadius + b.interactableRadius &&
-                                    !(b instanceof StationaryInteractableBody)) {
+                    if (shouldCollideWith(b)) {
                         collisionObjects.add(b);
                         b.markedForCollision = true;
                         markedForCollision = true;
@@ -102,8 +103,28 @@ public class InteractableBody extends Circle {
         return collisionObjects.isEmpty() ? null : new CollisionGroup(this, collisionObjects);
     }
 
-    private double calculateForce(double mass, double inverseDistance) {
-        return simulation.GRAVITATIONAL_CONSTANT * simulation.getPlaybackSpeed() * simulation.getPlaybackSpeed() * mass * inverseDistance * inverseDistance;
+    private boolean shouldCollideWith(InteractableBody b) {
+        boolean notThis = !b.equals(this);
+        boolean nonzeroMass = !(mass == 0 && b.getMass() == 0);
+        boolean collisionModesMatch = (this.collisionMode == CollisionMode.FULL && (b.collisionMode == CollisionMode.PARTIAL || b.getCollisionMode() == CollisionMode.FULL));
+        boolean notAlreadyCollided = !b.markedForCollision;
+        boolean exitedGracePeriod = b.age > b.collisionGracePeriod;
+        boolean notStationary = !(b instanceof StationaryInteractableBody);
+        boolean withinRange = Math.sqrt((simulationX - b.getSimulationX()) * (simulationX - b.getSimulationX()) +
+                (simulationY - b.getSimulationY()) * (simulationY - b.getSimulationY())) < interactableRadius + b.interactableRadius;
+        return notThis &&
+                nonzeroMass &&
+                collisionModesMatch &&
+                notAlreadyCollided &&
+                exitedGracePeriod &&
+                notStationary &&
+                withinRange;
+    }
+
+    private double calculateAcceleration(InteractableBody b, double inverseDistance, double distance) {
+        if (!(b instanceof GasParticle) || (b instanceof GasParticle && distance > ((GasParticle) b).getRMaxForce()))
+            return Simulation.GRAVITATIONAL_CONSTANT * simulation.getPlaybackSpeed() * simulation.getPlaybackSpeed() * b.getMass() * inverseDistance * inverseDistance;
+        else return Simulation.GRAVITATIONAL_CONSTANT * simulation.getPlaybackSpeed() * simulation.getPlaybackSpeed() * ((GasParticle) b).baseRepulsiveFunction(distance);
     }
 
     public void updateLocation(double factor) {
@@ -122,9 +143,9 @@ public class InteractableBody extends Circle {
             setCenterY(simulationY);
         }
         if (!isFirstUpdate && simulation.trailsEnabled()) {
-            Line trailLink = new Line(previousX, previousY, getCenterX(), getCenterY());
-            trailLink.setStroke(Color.BLUE);
-            simulation.getTrails().getChildren().add(trailLink);
+            TrailLink link = new TrailLink(previousX, previousY, getCenterX(), getCenterY(), simulation);
+            link.setStroke(Color.BLUE);
+            simulation.getTrails().getChildren().add(link);
         } else isFirstUpdate = false;
     }
 
@@ -221,6 +242,14 @@ public class InteractableBody extends Circle {
 
     public boolean isMarkedForCollision() {
         return markedForCollision;
+    }
+
+    public void setCollisionMode(CollisionMode mode) {
+        collisionMode = mode;
+    }
+
+    public CollisionMode getCollisionMode() {
+        return collisionMode;
     }
 
     public void setFirstUpdateStatus(boolean value) {

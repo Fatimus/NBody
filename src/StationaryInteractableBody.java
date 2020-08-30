@@ -1,7 +1,7 @@
 public class StationaryInteractableBody extends InteractableBody {
 
-    public StationaryInteractableBody(double mass, double x, double y, Simulation s) {
-        super(x, y, 0, 0, mass, s);
+    public StationaryInteractableBody(double x, double y, double mass, CollisionMode collisionMode, Simulation simulation) {
+        super(x, y, 0, 0, mass, collisionMode, simulation);
     }
 
     @Override
